@@ -1,48 +1,95 @@
-﻿using System;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Web.Http;
+using System.Xml.Linq;
 using UsedPartsDepotAPI.Models;
 
 namespace UsedPartsDepotAPI.Controllers
 {
     public class UserController : ApiController
     {
-        // GET api/values
-        public string GetExtensiveUsers()
-        {
+        public static string connectionString = "mongodb://localhost";
+        public static MongoClient client = new MongoClient(connectionString);
+        public static IMongoDatabase database = client.GetDatabase("partsDepot");
+        public static IMongoCollection<BsonDocument> collection = database.GetCollection<BsonDocument>("PartsDepot");
 
-        
-            return  "";
+
+        // GET: api/parts
+        [HttpGet]
+        public HttpResponseMessage GetUser()
+        {
+            var result = collection.Find(_ => true).Project("{_id: 0, lastModified: 0}").ToList().ToJson();
+
+            return new HttpResponseMessage()
+            {
+                Content = new StringContent(result, Encoding.UTF8, "text/html")
+            };
         }
 
-        // GET api/values/5
-        public string Get(int id)
+        // GET: api/parts/5
+        [HttpGet]
+        public HttpResponseMessage Get(string id)
         {
-            return "value";
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(id));
+            var result = collection.Find(filter).Project("{_id: 0, lastModified: 0}").First().ToJson();
+
+            return new HttpResponseMessage()
+            {
+                Content = new StringContent(result, Encoding.UTF8, "text/html")
+            };
         }
 
-        // POST api/values
-        public void Post([FromBody]string value)
+        [HttpPost]
+        public HttpResponseMessage Post([FromBody]User value)
         {
-            depotUser du = new depotUser();
-            du.fName = "jeff";
-            du.lName = "rickkyyyy";
-            RetrievePartsDepotDB db = new RetrievePartsDepotDB();
-            db.depotUsers.Add(du);
-            db.SaveChanges();
+            string result = "";
+            try
+            {
+                collection.InsertOne(new BsonDocument(value.ToBsonDocument()));
+                result = "Inserted"; 
+            }catch(Exception e)
+            {
+                result = e.ToString();
+            }
+
+            return new HttpResponseMessage()
+            {
+                Content = new StringContent(result, Encoding.UTF8, "text/html")
+            };
+
         }
 
-        // PUT api/values/5
-        public void Put(int id, [FromBody]string value)
+        [HttpPut]
+        public HttpResponseMessage Put(string id, string fName, string lName, string dateJoined)
         {
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(id)); ;
+            var update = Builders<BsonDocument>.Update.Set("userFirst", fName).Set("userLast", lName).Set("joinDate", dateJoined).CurrentDate("lastModified");
+            var result = collection.UpdateMany(filter, update);
+
+            return new HttpResponseMessage()
+            {
+                Content = new StringContent(result.ToString(), Encoding.UTF8, "text/html")
+            };
         }
 
-        // DELETE api/values/5
-        public void Delete(int id)
+        // DELETE: api/parts/5
+        [HttpDelete]
+        public HttpResponseMessage Delete(string id)
         {
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(id)); ;
+            var result = collection.DeleteOne(filter);
+
+            return new HttpResponseMessage()
+            {
+                Content = new StringContent(result.ToString(), Encoding.UTF8, "text/html")
+            };
         }
     }
 }
