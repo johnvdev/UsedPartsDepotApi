@@ -1,39 +1,104 @@
-﻿using System;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Web.Http;
+using UsedPartsDepotAPI.Models;
 
 namespace UsedPartsDepotAPI.Controllers
 {
     public class PartsController : ApiController
     {
+        public static string connectionString = "mongodb://localhost";
+        public static MongoClient client = new MongoClient(connectionString);
+        public static IMongoDatabase database = client.GetDatabase("partsDepot");
+        public static IMongoCollection<BsonDocument> partsCollection = database.GetCollection<BsonDocument>("Parts");
+        // PUT = insert or update; POST = insert
         // GET: api/Parts
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
 
         // GET: api/Parts/5
-        public string Get(int id)
+        [HttpGet]
+        public HttpResponseMessage GetByVehicle([FromUri]string[] Vehicle)
         {
-            return "value";
+            try
+            {
+                var filter = Builders<BsonDocument>.Filter.Eq("Vehicle", Vehicle);
+                var result = partsCollection.Find(filter).Project("{ lastModified: 0}").First().ToJson();
+
+                return new HttpResponseMessage()
+                {
+                    Content = new StringContent(result, Encoding.UTF8, "text/html")
+                };
+            }
+            catch(Exception e)
+            {
+                return this.Request.CreateResponse(HttpStatusCode.NoContent);
+            }
+     
         }
 
+        //[HttpGet]
+        //public HttpResponseMessage GetByUser(string UserID)
+        //{
+        //    var filter = Builders<BsonDocument>.Filter.Eq("UserID", UserID);
+        //    var result = partsCollection.Find(filter).Project("{_id: 0, lastModified: 0}").First().ToJson();
+
+        //    return new HttpResponseMessage()
+        //    {
+        //        Content = new StringContent(result, Encoding.UTF8, "text/html")
+        //    };
+        //}
+
         // POST: api/Parts
-        public void Post([FromBody]string value)
+        [HttpPost]
+        public HttpResponseMessage Post([FromBody]Part value)
         {
+            string result = "";
+            try
+            {
+                partsCollection.InsertOne(new BsonDocument(value.ToBsonDocument()));
+                result = "Inserted";
+            }
+            catch (Exception e)
+            {
+                result = e.ToString();
+            }
+
+            return new HttpResponseMessage()
+            {
+                Content = new StringContent(result, Encoding.UTF8, "text/html")
+            };
         }
 
         // PUT: api/Parts/5
-        public void Put(int id, [FromBody]string value)
+        [HttpPut]
+        public HttpResponseMessage Put(string id, Part part)
         {
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(id)); ;
+            var update = Builders<BsonDocument>.Update.Set("UserID", part.UserID).Set("Title", part.Title).Set("Desc", part.Desc).Set("Price", part.Price).Set("Location", part.Location).Set("Vehicle", part.Vehicle).Set("Category", part.Category).CurrentDate("lastModified");
+            var result = partsCollection.UpdateMany(filter, update);
+
+            return new HttpResponseMessage()
+            {
+                Content = new StringContent(result.ToString(), Encoding.UTF8, "text/html")
+            };
         }
 
         // DELETE: api/Parts/5
-        public void Delete(int id)
+        [HttpDelete]
+        public HttpResponseMessage Delete(string id)
         {
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(id)); ;
+            var result = partsCollection.DeleteOne(filter);
+
+            return new HttpResponseMessage()
+            {
+                Content = new StringContent(result.ToString(), Encoding.UTF8, "text/html")
+            };
         }
     }
 }

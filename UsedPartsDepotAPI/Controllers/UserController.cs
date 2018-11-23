@@ -25,7 +25,7 @@ namespace UsedPartsDepotAPI.Controllers
         [HttpGet]
         public HttpResponseMessage GetUser()
         {
-            var result = collection.Find(_ => true).Project("{_id: 0, lastModified: 0}").ToList().ToJson();
+            var result = collection.Find(_ => true).Project("{lastModified: 0}").ToList().ToJson();
 
             return new HttpResponseMessage()
             {
@@ -33,12 +33,35 @@ namespace UsedPartsDepotAPI.Controllers
             };
         }
 
+        // GET: api/parts
+        // GET: api/parts
+        [HttpPut]
+        public HttpResponseMessage Login(string email, string password)
+        {
+            try
+            {
+                var builder = Builders<BsonDocument>.Filter;
+                var filter = builder.And(builder.Eq("email", email), builder.Eq("password", password));
+                var result = collection.Find(filter).First();
+
+                return new HttpResponseMessage()
+                {
+                    Content = new StringContent(result.ToString(), Encoding.UTF8, "text/html")
+                };
+            }
+            catch
+            {
+                return this.Request.CreateResponse(HttpStatusCode.NoContent);
+            }
+           
+        }
+
         // GET: api/parts/5
         [HttpGet]
         public HttpResponseMessage Get(string id)
         {
             var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(id));
-            var result = collection.Find(filter).Project("{_id: 0, lastModified: 0}").First().ToJson();
+            var result = collection.Find(filter).Project("{ lastModified: 0}").First().ToJson();
 
             return new HttpResponseMessage()
             {
@@ -67,10 +90,10 @@ namespace UsedPartsDepotAPI.Controllers
         }
 
         [HttpPut]
-        public HttpResponseMessage Put(string id, string fName, string lName, string dateJoined)
+        public HttpResponseMessage Put(string id, string fName, string lName, string dateJoined, string Email, string Password)
         {
-            var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(id)); ;
-            var update = Builders<BsonDocument>.Update.Set("userFirst", fName).Set("userLast", lName).Set("joinDate", dateJoined).CurrentDate("lastModified");
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(id));
+            var update = Builders<BsonDocument>.Update.Set("userFirst", fName).Set("userLast", lName).Set("joinDate", dateJoined).Set("Email", Email).Set("Password", Password).CurrentDate("lastModified");
             var result = collection.UpdateMany(filter, update);
 
             return new HttpResponseMessage()
