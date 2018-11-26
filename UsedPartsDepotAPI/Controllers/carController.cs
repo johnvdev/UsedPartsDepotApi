@@ -16,13 +16,13 @@ namespace UsedPartsDepotAPI.Controllers
         public static string connectionString = "mongodb://localhost";
         public static MongoClient client = new MongoClient(connectionString);
         public static IMongoDatabase database = client.GetDatabase("partsDepot");
-        public static IMongoCollection<User> collection = database.GetCollection<User>("PartsDepot");
+        public static IMongoCollection<BsonDocument> collection =  database.GetCollection<BsonDocument>("PartsDepot");
 
         // GET: api/car/5
         public HttpResponseMessage Get(string userID)
         {
-            var filter = Builders<User>.Filter.Eq("_id", ObjectId.Parse(userID));
-            var projection = Builders<User>.Projection.Include("cars").Exclude("_id");
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(userID));
+            var projection = Builders<BsonDocument>.Projection.Include("cars").Exclude("_id");
             var cars = collection.Find(filter).Project(projection).SingleOrDefault().ToJson();           
 
             return new HttpResponseMessage()
@@ -32,8 +32,23 @@ namespace UsedPartsDepotAPI.Controllers
         }
 
         // POST: api/car
-        public void Post([FromBody]string value)
+        public HttpResponseMessage Post([FromBody]Car value, string userID)
         {
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(userID));
+            var update = Builders<BsonDocument>.Update.Push("cars", new BsonDocument(value.ToBsonDocument()));
+            var result = collection.UpdateOne(filter, update);
+
+            if(result.IsAcknowledged)
+            {
+                return this.Request.CreateResponse(HttpStatusCode.OK);
+            }
+            else
+            {
+                return this.Request.CreateResponse(HttpStatusCode.NotAcceptable);
+            }
+
+
+           
         }
 
         // PUT: api/car/5
