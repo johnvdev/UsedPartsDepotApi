@@ -21,18 +21,32 @@ namespace UsedPartsDepotAPI.Controllers
         // GET: api/Parts
 
         // GET: api/Parts/5
-        [HttpGet]
-        public HttpResponseMessage GetByVehicle([FromUri]string[] Vehicle)
+        
+        public HttpResponseMessage Get([FromUri]string[] Vehicle, string userID)
         {
             try
             {
-                var filter = Builders<BsonDocument>.Filter.Eq("Vehicle", Vehicle);
-                var result = partsCollection.Find(filter).Project("{ lastModified: 0}").First().ToJson();
-
-                return new HttpResponseMessage()
+                if (userID == "null")
                 {
-                    Content = new StringContent(result, Encoding.UTF8, "text/html")
-                };
+                    var filter = Builders<BsonDocument>.Filter.Eq("Vehicle", Vehicle);
+                    var result = partsCollection.Find(filter).Project("{ lastModified: 0}").SingleOrDefault().ToJson();
+
+                    return new HttpResponseMessage()
+                    {
+                        Content = new StringContent(result, Encoding.UTF8, "text/html")
+                    };
+                }
+                else
+                {
+                    var filter = Builders<BsonDocument>.Filter.Eq("UserID", userID);
+                    var result = partsCollection.Find(filter).Project("{_id: 0, lastModified: 0}").SingleOrDefault().ToJson();
+
+                    return new HttpResponseMessage()
+                    {
+                        Content = new StringContent(result, Encoding.UTF8, "text/html")
+                    };
+                }
+
             }
             catch(Exception e)
             {
@@ -40,18 +54,6 @@ namespace UsedPartsDepotAPI.Controllers
             }
      
         }
-
-        //[HttpGet]
-        //public HttpResponseMessage GetByUser(string UserID)
-        //{
-        //    var filter = Builders<BsonDocument>.Filter.Eq("UserID", UserID);
-        //    var result = partsCollection.Find(filter).Project("{_id: 0, lastModified: 0}").First().ToJson();
-
-        //    return new HttpResponseMessage()
-        //    {
-        //        Content = new StringContent(result, Encoding.UTF8, "text/html")
-        //    };
-        //}
 
         // POST: api/Parts
         [HttpPost]
