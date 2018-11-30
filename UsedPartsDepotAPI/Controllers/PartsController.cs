@@ -22,14 +22,15 @@ namespace UsedPartsDepotAPI.Controllers
 
         // GET: api/Parts/5
         
-        public HttpResponseMessage Get([FromUri]string[] Vehicle, string userID)
+        public HttpResponseMessage Get([FromUri]string[] Vehicle, string userID, string category)
         {
             try
             {
                 if (userID == "null")
                 {
-                    var filter = Builders<BsonDocument>.Filter.Eq("Vehicle", Vehicle);
-                    var result = partsCollection.Find(filter).Project("{ lastModified: 0}").SingleOrDefault().ToJson();
+                    var builder = Builders<BsonDocument>.Filter;
+                    var filter = builder.And(builder.Eq("Vehicle", Vehicle), builder.Eq("Category", category));
+                    var result = partsCollection.Find(filter).Project("{_id:0, lastModified: 0}").ToList().ToJson();
 
                     return new HttpResponseMessage()
                     {
@@ -39,7 +40,7 @@ namespace UsedPartsDepotAPI.Controllers
                 else
                 {
                     var filter = Builders<BsonDocument>.Filter.Eq("UserID", userID);
-                    var result = partsCollection.Find(filter).Project("{_id: 0, lastModified: 0}").SingleOrDefault().ToJson();
+                    var result = partsCollection.Find(filter).Project("{_id:0,lastModified: 0}").ToList().ToJson();
 
                     return new HttpResponseMessage()
                     {
