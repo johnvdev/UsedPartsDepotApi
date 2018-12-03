@@ -11,7 +11,7 @@ namespace UsedPartsDepotAPI.Models
         public string Title;
         public string Desc;
         public double Price;
-        public Dictionary<string, string> Location;
+        public string Location;
         public string[] Vehicle;
         public string Category;
     }
