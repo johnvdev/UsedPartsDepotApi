@@ -7,6 +7,8 @@ namespace UsedPartsDepotAPI.Models
 {
     public class Part
     {
+      
+        public string PartsID;
         public string UserID;
         public string Title;
         public string Desc;

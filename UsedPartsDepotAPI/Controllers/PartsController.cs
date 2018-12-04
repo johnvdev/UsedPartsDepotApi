@@ -21,7 +21,21 @@ namespace UsedPartsDepotAPI.Controllers
         // GET: api/Parts
 
         // GET: api/Parts/5
-        
+
+        [Route("parts/partid={partID}")]
+        public HttpResponseMessage Get(string partID)
+        {
+            var filter = Builders<BsonDocument>.Filter.Eq("PartsID", partID);
+            var result = partsCollection.Find(filter).Project("{lastModified: 0}").First().ToString();
+
+
+            return new HttpResponseMessage()
+            {
+                Content = new StringContent(result, Encoding.UTF8, "text/html")
+            };
+        }
+
+
         public HttpResponseMessage Get([FromUri]string[] Vehicle, string userID, string category)
         {
             try
@@ -30,7 +44,7 @@ namespace UsedPartsDepotAPI.Controllers
                 {
                     var builder = Builders<BsonDocument>.Filter;
                     var filter = builder.And(builder.Eq("Vehicle", Vehicle), builder.Eq("Category", category));
-                    var result = partsCollection.Find(filter).Project("{_id:0, lastModified: 0}").ToList().ToJson();
+                    var result = partsCollection.Find(filter).Project("{lastModified: 0}").ToList().ToJson();
 
                     return new HttpResponseMessage()
                     {
@@ -40,7 +54,8 @@ namespace UsedPartsDepotAPI.Controllers
                 else
                 {
                     var filter = Builders<BsonDocument>.Filter.Eq("UserID", userID);
-                    var result = partsCollection.Find(filter).Project("{_id:0,lastModified: 0}").ToList().ToJson();
+                    var result = partsCollection.Find(filter).Project("{lastModified: 0}").ToList().ToJson();
+                    
 
                     return new HttpResponseMessage()
                     {
